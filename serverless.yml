@@ -1,0 +1,59 @@
+service: aws-node-typescript # NOTE: update this with your service name
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  profile: papaya
+  runtime: nodejs18.x
+  region: ap-southeast-1
+  tracing:
+    lambda: true
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: s3:*
+          Resource: "arn:aws:s3:::*"
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: "*"
+
+package:
+  individually: true
+  excludeDevDependencies: true
+  patterns:
+    - google-credentials.json
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - http:
+          path: hello
+          method: get
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+  - serverless-deployment-bucket
+
+custom:
+  esbuild:
+    loader:
+      .graphql: text
+      .html: text
+    watch:
+      pattern: ["**/**/*.(ts|graphql|html)"]
+    concurrency: 5
+    target: node18
+    platform: node
+    keepNames: true
+    bundle: true
+    minify: true
+    packager: "yarn"
+    sourcemap: both
+  deploymentBucket:
+    accelerate: true
+    blockPublicAccess: true
